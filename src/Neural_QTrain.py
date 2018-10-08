@@ -12,11 +12,12 @@ TEST = 10  # The number of tests to run every TEST_FREQUENCY episodes
 TEST_FREQUENCY = 100  # Num episodes to run before visualizing test accuracy
 
 # TODO: HyperParameters
-GAMMA =  # discount factor
-INITIAL_EPSILON =  # starting value of epsilon
-FINAL_EPSILON =  # final value of epsilon
-EPSILON_DECAY_STEPS =  # decay period
+GAMMA = 0.9 # discount factor
+INITIAL_EPSILON = 0.9 # starting value of epsilon
+FINAL_EPSILON =  0.1# final value of epsilon
+EPSILON_DECAY_STEPS = 100 # decay period
 
+HIDDEN_NODES = 64
 # Create environment
 # -- DO NOT MODIFY --
 env = gym.make(ENV_NAME)
@@ -31,15 +32,21 @@ action_in = tf.placeholder("float", [None, ACTION_DIM])
 target_in = tf.placeholder("float", [None])
 
 # TODO: Define Network Graph
+w1 = tf.Variable(tf.truncated_normal([STATE_DIM, HIDDEN_NODES]))
+b1 = tf.Variable(tf.constant(0.01,shape = [HIDDEN_NODES]))
+logits1 = tf.matmul(state_in, w1) + b1
+output1 = tf.tanh(logits1)
 
 
+w2 = tf.Variable(tf.truncated_normal([HIDDEN_NODES,ACTION_DIM]))
+b2 = tf.Variable(tf.constant(0.01,shape = [ACTION_DIM]))
 # TODO: Network outputs
-q_values =
-q_action =
+q_values = tf.matmul(output1, w2) + b2
+q_action = tf.reduce_sum(tf.multiply(q_values, action_in), reduction_indices=1)
 
 # TODO: Loss/Optimizer Definition
-loss =
-optimizer =
+loss = tf.reduce_sum(tf.square(target_in - q_action))
+optimizer = tf.train.AdamOptimizer().minimize(loss)
 
 # Start session - Tensorflow housekeeping
 session = tf.InteractiveSession()
@@ -86,7 +93,7 @@ for episode in range(EPISODE):
         # TODO: Calculate the target q-value.
         # hint1: Bellman
         # hint2: consider if the episode has terminated
-        target =
+        target = reward + GAMMA * np.max(nextstate_q_values)
 
         # Do one training step
         session.run([optimizer], feed_dict={
