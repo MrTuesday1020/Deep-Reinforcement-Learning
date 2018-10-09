@@ -13,9 +13,14 @@ TEST_FREQUENCY = 100  # Num episodes to run before visualizing test accuracy
 
 # TODO: HyperParameters
 GAMMA = 0.9 # discount factor
-INITIAL_EPSILON = 0.9 # starting value of epsilon
-FINAL_EPSILON =  0.1# final value of epsilon
+INITIAL_EPSILON = 0.5 # starting value of epsilon
+FINAL_EPSILON =  0.05# final value of epsilon
 EPSILON_DECAY_STEPS = 100 # decay period
+
+replay_buffer = []
+BATCH_SIZE = 32
+REPLAY_SIZE = 10000
+LEARNING_RATE = 0.01
 
 HIDDEN_NODES = 64
 # Create environment
@@ -32,22 +37,21 @@ action_in = tf.placeholder("float", [None, ACTION_DIM])
 target_in = tf.placeholder("float", [None])
 
 # TODO: Define Network Graph
-w1 = tf.Variable(tf.truncated_normal([STATE_DIM, HIDDEN_NODES]))
-b1 = tf.Variable(tf.constant(0.01,shape = [HIDDEN_NODES]))
-logits1 = tf.matmul(state_in, w1) + b1
-output1 = tf.nn.relu(logits1)
-print(output1.get_shape())
+w_initializer, b_initializer = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
+w1 = tf.get_variable('w1', [STATE_DIM, HIDDEN_NODES], initializer=w_initializer)
+b1 = tf.get_variable('b1', [HIDDEN_NODES], initializer=b_initializer)
+l1 = tf.nn.tanh(tf.matmul(state_in, w1) + b1)
 
+w2 = tf.get_variable('w2', [HIDDEN_NODES, ACTION_DIM], initializer=w_initializer)
+b2 = tf.get_variable('b2', [ACTION_DIM], initializer=b_initializer)
 
-w2 = tf.Variable(tf.truncated_normal([HIDDEN_NODES,ACTION_DIM]))
-b2 = tf.Variable(tf.constant(0.01,shape = [ACTION_DIM]))
 # TODO: Network outputs
-q_values = tf.matmul(output1, w2) + b2
+q_values = tf.matmul(l1, w2) + b2
 q_action = tf.reduce_sum(tf.multiply(q_values, action_in), reduction_indices=1)
 
 # TODO: Loss/Optimizer Definition
 loss = tf.reduce_sum(tf.square(target_in - q_action))
-optimizer = tf.train.AdamOptimizer().minimize(loss)
+optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
 
 # Start session - Tensorflow housekeeping
 session = tf.InteractiveSession()
@@ -85,26 +89,40 @@ for episode in range(EPISODE):
     # Move through env according to e-greedy policy
     for step in range(STEP):
         action = explore(state, epsilon)
+
         next_state, reward, done, _ = env.step(np.argmax(action))
 
-        nextstate_q_values = q_values.eval(feed_dict={
-            state_in: [next_state]
-        })
+        # nextstate_q_values = q_values.eval(feed_dict={
+        #     state_in: [next_state]
+        # })
 
         # TODO: Calculate the target q-value.
         # hint1: Bellman
         # hint2: consider if the episode has terminated
-        if not done:
-        	target = reward + GAMMA * np.max(nextstate_q_values)
-        else:
-        	target = reward
+        replay_buffer.append((state,action,reward,next_state,done))
+        if len(replay_buffer) > REPLAY_SIZE:
+            replay_buffer.pop(0)
+        if len(replay_buffer) > BATCH_SIZE:
+            minibatch = random.sample(replay_buffer,BATCH_SIZE)
+            state_batch = [value[0] for value in minibatch]
+            action_batch = [value[1] for value in minibatch]
+            reward_batch = [value[2] for value in minibatch]
+            next_state_batch = [value[3] for value in minibatch]
+            target_batch = []
+            nextstate_q_batch = q_values.eval(feed_dict={state_in:next_state_batch})
+            for i in range(BATCH_SIZE):
+                done = minibatch[i][4]
+                if done:
+                    target_batch.append(reward_batch[i])
+                else:
+                    target_batch.append(reward_batch[i] + GAMMA*np.max(nextstate_q_batch[i]))
 
         # Do one training step
-        session.run([optimizer], feed_dict={
-            target_in: [target],
-            action_in: [action],
-            state_in: [state]
-        })
+            session.run([optimizer], feed_dict={
+                state_in: state_batch,
+                target_in: target_batch,
+                action_in: action_batch
+                })
 
         # Update
         state = next_state
