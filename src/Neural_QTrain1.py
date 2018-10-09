@@ -16,8 +16,9 @@ GAMMA = 0.9 # discount factor
 INITIAL_EPSILON = 0.9 # starting value of epsilon
 FINAL_EPSILON =  0.1# final value of epsilon
 EPSILON_DECAY_STEPS = 100 # decay period
-
 HIDDEN_NODES = 64
+LEARNING_RATE=0.01,
+
 # Create environment
 # -- DO NOT MODIFY --
 env = gym.make(ENV_NAME)
@@ -32,18 +33,16 @@ action_in = tf.placeholder("float", [None, ACTION_DIM])
 target_in = tf.placeholder("float", [None])
 
 # TODO: Define Network Graph
-w1 = tf.Variable(tf.truncated_normal([STATE_DIM, HIDDEN_NODES]))
-b1 = tf.Variable(tf.constant(0.01,shape = [HIDDEN_NODES]))
-logits1 = tf.matmul(state_in, w1) + b1
-output1 = tf.nn.relu(logits1)
-print(output1.get_shape())
+w_initializer, b_initializer = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
+w1 = tf.get_variable('w1', [STATE_DIM, HIDDEN_NODES], initializer=w_initializer)
+b1 = tf.get_variable('b1', [HIDDEN_NODES], initializer=b_initializer)
+l1 = tf.nn.tanh(tf.matmul(state_in, w1) + b1)
 
-
-w2 = tf.Variable(tf.truncated_normal([HIDDEN_NODES,ACTION_DIM]))
-b2 = tf.Variable(tf.constant(0.01,shape = [ACTION_DIM]))
-# TODO: Network outputs
-q_values = tf.matmul(output1, w2) + b2
+w2 = tf.get_variable('w2', [HIDDEN_NODES, ACTION_DIM], initializer=w_initializer)
+b2 = tf.get_variable('b2', [ACTION_DIM], initializer=b_initializer)
+q_values = tf.matmul(l1, w2) + b2
 q_action = tf.reduce_sum(tf.multiply(q_values, action_in), reduction_indices=1)
+
 
 # TODO: Loss/Optimizer Definition
 loss = tf.reduce_sum(tf.square(target_in - q_action))
