@@ -13,13 +13,13 @@ TEST_FREQUENCY = 100  # Num episodes to run before visualizing test accuracy
 
 # TODO: HyperParameters
 GAMMA = 0.9 # discount factor
-INITIAL_EPSILON = 0.9 # starting value of epsilon
-FINAL_EPSILON =  0.1# final value of epsilon
+INITIAL_EPSILON = 0.5 # starting value of epsilon
+FINAL_EPSILON =  0.01 # final value of epsilon
 EPSILON_DECAY_STEPS = 100 # decay period
 
 replay_buffer = []
-BATCH_SIZE = 64
-REPLAY_SIZE = 1024 * 5
+BATCH_SIZE = 50
+REPLAY_SIZE = 5000
 LEARNING_RATE = 0.01
 HIDDEN_NODES = 20
 
@@ -38,8 +38,8 @@ target_in = tf.placeholder("float", [None])
 
 # TODO: Define Network Graph
 w_initializer, b_initializer = tf.random_normal_initializer(0.0, 0.3), tf.constant_initializer(0.1)
-hidden_layer = tf.layers.dense(state_in, HIDDEN_NODES, tf.nn.relu, kernel_initializer=w_initializer, bias_initializer=b_initializer, name='e1')
-q_values = tf.layers.dense(hidden_layer, ACTION_DIM, kernel_initializer=w_initializer, bias_initializer=b_initializer, name='e2')
+hidden_layer = tf.layers.dense(state_in, HIDDEN_NODES, tf.nn.tanh, kernel_initializer=w_initializer, bias_initializer=b_initializer)
+q_values = tf.layers.dense(hidden_layer, ACTION_DIM, kernel_initializer=w_initializer, bias_initializer=b_initializer)
 q_action = tf.reduce_sum(tf.multiply(q_values, action_in), reduction_indices=1)
 # TODO: Loss/Optimizer Definition
 loss = tf.reduce_sum(tf.square(target_in - q_action))
@@ -77,6 +77,8 @@ for episode in range(EPISODE):
 
     # Update epsilon once per episode
     epsilon -= epsilon / EPSILON_DECAY_STEPS
+    if epsilon < FINAL_EPSILON:
+        epsilon = FINAL_EPSILON
 
     # Move through env according to e-greedy policy
     for step in range(STEP):

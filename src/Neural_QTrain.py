@@ -14,12 +14,12 @@ TEST_FREQUENCY = 100  # Num episodes to run before visualizing test accuracy
 # TODO: HyperParameters
 GAMMA = 0.9 # discount factor
 INITIAL_EPSILON = 0.5 # starting value of epsilon
-FINAL_EPSILON =  0.05# final value of epsilon
+FINAL_EPSILON =  0.01 # final value of epsilon
 EPSILON_DECAY_STEPS = 100 # decay period
 
 replay_buffer = []
-BATCH_SIZE = 64
-REPLAY_SIZE = 10000
+BATCH_SIZE = 50
+REPLAY_SIZE = 5000
 LEARNING_RATE = 0.01
 HIDDEN_NODES = 20
 
@@ -85,6 +85,8 @@ for episode in range(EPISODE):
 
     # Update epsilon once per episode
     epsilon -= epsilon / EPSILON_DECAY_STEPS
+    if epsilon < FINAL_EPSILON:
+        epsilon = FINAL_EPSILON
 
     # Move through env according to e-greedy policy
     for step in range(STEP):
