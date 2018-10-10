@@ -16,8 +16,12 @@ GAMMA = 0.9 # discount factor
 INITIAL_EPSILON = 0.9 # starting value of epsilon
 FINAL_EPSILON =  0.1# final value of epsilon
 EPSILON_DECAY_STEPS = 100 # decay period
-HIDDEN_NODES = 64
-LEARNING_RATE=0.01,
+
+replay_buffer = []
+BATCH_SIZE = 64
+REPLAY_SIZE = 1024 * 5
+LEARNING_RATE = 0.01
+HIDDEN_NODES = 20
 
 # Create environment
 # -- DO NOT MODIFY --
@@ -33,20 +37,13 @@ action_in = tf.placeholder("float", [None, ACTION_DIM])
 target_in = tf.placeholder("float", [None])
 
 # TODO: Define Network Graph
-w_initializer, b_initializer = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
-w1 = tf.get_variable('w1', [STATE_DIM, HIDDEN_NODES], initializer=w_initializer)
-b1 = tf.get_variable('b1', [HIDDEN_NODES], initializer=b_initializer)
-l1 = tf.nn.tanh(tf.matmul(state_in, w1) + b1)
-
-w2 = tf.get_variable('w2', [HIDDEN_NODES, ACTION_DIM], initializer=w_initializer)
-b2 = tf.get_variable('b2', [ACTION_DIM], initializer=b_initializer)
-q_values = tf.matmul(l1, w2) + b2
+w_initializer, b_initializer = tf.random_normal_initializer(0.0, 0.3), tf.constant_initializer(0.1)
+hidden_layer = tf.layers.dense(state_in, HIDDEN_NODES, tf.nn.relu, kernel_initializer=w_initializer, bias_initializer=b_initializer, name='e1')
+q_values = tf.layers.dense(hidden_layer, ACTION_DIM, kernel_initializer=w_initializer, bias_initializer=b_initializer, name='e2')
 q_action = tf.reduce_sum(tf.multiply(q_values, action_in), reduction_indices=1)
-
-
 # TODO: Loss/Optimizer Definition
 loss = tf.reduce_sum(tf.square(target_in - q_action))
-optimizer = tf.train.AdamOptimizer().minimize(loss)
+optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
 
 # Start session - Tensorflow housekeeping
 session = tf.InteractiveSession()
@@ -93,17 +90,42 @@ for episode in range(EPISODE):
         # TODO: Calculate the target q-value.
         # hint1: Bellman
         # hint2: consider if the episode has terminated
-        if not done:
-        	target = reward + GAMMA * np.max(nextstate_q_values)
-        else:
-        	target = reward
+        # if not done:
+        # 	target = reward + GAMMA * np.max(nextstate_q_values)
+        # else:
+        # 	target = reward
+
+        # # Do one training step
+        # session.run([optimizer], feed_dict={
+        #     target_in: [target],
+        #     action_in: [action],
+        #     state_in: [state]
+        # })
+
+        replay_buffer.append((state, action, reward, next_state, done))
+        if len(replay_buffer) > REPLAY_SIZE:
+            replay_buffer.pop(0)
+        if len(replay_buffer) > BATCH_SIZE:
+            minibatch = random.sample(replay_buffer, BATCH_SIZE)
+            state_batch = [value[0] for value in minibatch]
+            action_batch = [value[1] for value in minibatch]
+            reward_batch = [value[2] for value in minibatch]
+            next_state_batch = [value[3] for value in minibatch]
+            target_batch = []
+            nextstate_q_batch = q_values.eval(feed_dict={state_in:next_state_batch})
+            for i in range(BATCH_SIZE):
+                terminated = minibatch[i][4]
+                if terminated:
+                    target_batch.append(reward_batch[i])
+                else:
+                    target_batch.append(reward_batch[i] + GAMMA*np.max(nextstate_q_batch[i]))
 
         # Do one training step
-        session.run([optimizer], feed_dict={
-            target_in: [target],
-            action_in: [action],
-            state_in: [state]
-        })
+            session.run([optimizer], feed_dict={
+                state_in: state_batch,
+                target_in: target_batch,
+                action_in: action_batch
+                })
 
         # Update
         state = next_state
