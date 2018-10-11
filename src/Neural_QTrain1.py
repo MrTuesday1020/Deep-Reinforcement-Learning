@@ -43,7 +43,6 @@ b2 = tf.get_variable('b2', [ACTION_DIM], initializer=b_initializer)
 q_values = tf.matmul(l1, w2) + b2
 q_action = tf.reduce_sum(tf.multiply(q_values, action_in), reduction_indices=1)
 
-
 # TODO: Loss/Optimizer Definition
 loss = tf.reduce_sum(tf.square(target_in - q_action))
 optimizer = tf.train.AdamOptimizer().minimize(loss)
