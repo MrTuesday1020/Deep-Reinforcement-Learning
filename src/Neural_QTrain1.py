@@ -41,6 +41,7 @@ w_initializer, b_initializer = tf.random_normal_initializer(0.0, 0.3), tf.consta
 hidden_layer = tf.layers.dense(state_in, HIDDEN_NODES, tf.nn.tanh, kernel_initializer=w_initializer, bias_initializer=b_initializer)
 q_values = tf.layers.dense(hidden_layer, ACTION_DIM, kernel_initializer=w_initializer, bias_initializer=b_initializer)
 q_action = tf.reduce_sum(tf.multiply(q_values, action_in), reduction_indices=1)
+
 # TODO: Loss/Optimizer Definition
 loss = tf.reduce_sum(tf.square(target_in - q_action))
 optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
