@@ -104,30 +104,34 @@ for episode in range(EPISODE):
         # TODO: Calculate the target q-value.
         # hint1: Bellman
         # hint2: consider if the episode has terminated
-        replay_buffer.append((state,action,reward,next_state,done))
+        replay_buffer.append((state, action, reward, next_state, done))
         if len(replay_buffer) > REPLAY_SIZE:
             replay_buffer.pop(0)
         if len(replay_buffer) > BATCH_SIZE:
-            minibatch = random.sample(replay_buffer,BATCH_SIZE)
-            state_batch = [value[0] for value in minibatch]
-            action_batch = [value[1] for value in minibatch]
-            reward_batch = [value[2] for value in minibatch]
-            next_state_batch = [value[3] for value in minibatch]
-            target_batch = []
-            nextstate_q_batch = q_values.eval(feed_dict={state_in:next_state_batch})
-            for i in range(BATCH_SIZE):
-                terminated = minibatch[i][4]
-                if terminated:
-                    target_batch.append(reward_batch[i])
-                else:
-                    target_batch.append(reward_batch[i] + GAMMA*np.max(nextstate_q_batch[i]))
+            minibatch = random.sample(replay_buffer, BATCH_SIZE)
+        else:
+            minibatch = random.sample(replay_buffer, len(replay_buffer))
+
+        state_batch = [value[0] for value in minibatch]
+        action_batch = [value[1] for value in minibatch]
+        reward_batch = [value[2] for value in minibatch]
+        next_state_batch = [value[3] for value in minibatch]
+        target_batch = []
+        nextstate_q_batch = q_values.eval(feed_dict={state_in:next_state_batch})
+        for i in range(len(minibatch)):
+            terminated = minibatch[i][4]
+            if terminated:
+                target_batch.append(reward_batch[i])
+            else:
+                target_batch.append(reward_batch[i] + GAMMA*np.max(nextstate_q_batch[i]))
+
 
         # Do one training step
-            session.run([optimizer], feed_dict={
-                state_in: state_batch,
-                target_in: target_batch,
-                action_in: action_batch
-                })
+        session.run([optimizer], feed_dict={
+            state_in: state_batch,
+            target_in: target_batch,
+            action_in: action_batch
+        })
 
         # Update
         state = next_state
