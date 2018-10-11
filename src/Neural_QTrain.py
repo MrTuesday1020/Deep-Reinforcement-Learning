@@ -2,6 +2,8 @@ import gym
 import tensorflow as tf
 import numpy as np
 import random
+# import time
+
 
 # General Parameters
 # -- DO NOT MODIFY --
@@ -14,14 +16,14 @@ TEST_FREQUENCY = 100  # Num episodes to run before visualizing test accuracy
 # TODO: HyperParameters
 GAMMA = 0.9 # discount factor
 INITIAL_EPSILON = 0.5 # starting value of epsilon
-FINAL_EPSILON =  0.01 # final value of epsilon
+FINAL_EPSILON =  0.05 # final value of epsilon
 EPSILON_DECAY_STEPS = 100 # decay period
 
 replay_buffer = []
-BATCH_SIZE = 50
-REPLAY_SIZE = 5000
-LEARNING_RATE = 0.01
-HIDDEN_NODES = 20
+BATCH_SIZE = 128
+REPLAY_SIZE = 10000
+LEARNING_RATE = 0.001
+HIDDEN_NODES = 64
 
 # Create environment
 # -- DO NOT MODIFY --
@@ -78,6 +80,7 @@ def explore(state, epsilon):
 
 
 # Main learning loop
+# start_time = time.time()
 for episode in range(EPISODE):
 
     # initialize task
@@ -147,6 +150,8 @@ for episode in range(EPISODE):
                 if done:
                     break
         ave_reward = total_reward / TEST
+        # end_time = time.time()
+        # print(end_time-start_time)
         print('episode:', episode, 'epsilon:', epsilon, 'Evaluation '
                                                         'Average Reward:', ave_reward)
 
