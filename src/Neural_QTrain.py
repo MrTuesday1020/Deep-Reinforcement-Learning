@@ -14,15 +14,15 @@ TEST_FREQUENCY = 100  # Num episodes to run before visualizing test accuracy
 # TODO: HyperParameters
 GAMMA = 0.9 # discount factor
 INITIAL_EPSILON = 0.5 # starting value of epsilon
-FINAL_EPSILON =  0.05# final value of epsilon
+FINAL_EPSILON =  0.01 # final value of epsilon
 EPSILON_DECAY_STEPS = 100 # decay period
 
 replay_buffer = []
-BATCH_SIZE = 32
-REPLAY_SIZE = 10000
+BATCH_SIZE = 50
+REPLAY_SIZE = 5000
 LEARNING_RATE = 0.01
+HIDDEN_NODES = 20
 
-HIDDEN_NODES = 64
 # Create environment
 # -- DO NOT MODIFY --
 env = gym.make(ENV_NAME)
@@ -37,7 +37,7 @@ action_in = tf.placeholder("float", [None, ACTION_DIM])
 target_in = tf.placeholder("float", [None])
 
 # TODO: Define Network Graph
-w_initializer, b_initializer = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
+w_initializer, b_initializer = tf.random_normal_initializer(0.0, 0.3), tf.constant_initializer(0.1)
 w1 = tf.get_variable('w1', [STATE_DIM, HIDDEN_NODES], initializer=w_initializer)
 b1 = tf.get_variable('b1', [HIDDEN_NODES], initializer=b_initializer)
 l1 = tf.nn.tanh(tf.matmul(state_in, w1) + b1)
@@ -85,6 +85,8 @@ for episode in range(EPISODE):
 
     # Update epsilon once per episode
     epsilon -= epsilon / EPSILON_DECAY_STEPS
+    if epsilon < FINAL_EPSILON:
+        epsilon = FINAL_EPSILON
 
     # Move through env according to e-greedy policy
     for step in range(STEP):
@@ -111,8 +113,8 @@ for episode in range(EPISODE):
             target_batch = []
             nextstate_q_batch = q_values.eval(feed_dict={state_in:next_state_batch})
             for i in range(BATCH_SIZE):
-                done = minibatch[i][4]
-                if done:
+                terminated = minibatch[i][4]
+                if terminated:
                     target_batch.append(reward_batch[i])
                 else:
                     target_batch.append(reward_batch[i] + GAMMA*np.max(nextstate_q_batch[i]))
