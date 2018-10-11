@@ -18,10 +18,10 @@ FINAL_EPSILON =  0.05 # final value of epsilon
 EPSILON_DECAY_STEPS = 100 # decay period
 
 replay_buffer = []
-BATCH_SIZE = 50
-REPLAY_SIZE = 5000
+BATCH_SIZE = 128
+REPLAY_SIZE = 1024 * 5
 LEARNING_RATE = 0.001
-HIDDEN_NODES = 20
+HIDDEN_NODES = 64
 
 # Create environment
 # -- DO NOT MODIFY --

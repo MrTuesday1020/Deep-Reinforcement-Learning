@@ -14,13 +14,13 @@ TEST_FREQUENCY = 100  # Num episodes to run before visualizing test accuracy
 # TODO: HyperParameters
 GAMMA = 0.9 # discount factor
 INITIAL_EPSILON = 0.5 # starting value of epsilon
-FINAL_EPSILON =  0.01 # final value of epsilon
+FINAL_EPSILON =  0.05 # final value of epsilon
 EPSILON_DECAY_STEPS = 100 # decay period
 
 replay_buffer = []
 BATCH_SIZE = 50
 REPLAY_SIZE = 5000
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 HIDDEN_NODES = 20
 
 # Create environment
